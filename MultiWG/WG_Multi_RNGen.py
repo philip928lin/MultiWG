@@ -31,6 +31,7 @@ def MultiGenRn(Setting, Stat):
     if LeapYear: 
         if GenYear%4 != 0:
             print("GenYear has to be the multiple of 4 to generate leap year." )
+            input()
             quit()
     
     # Simulate spatial correlated RN

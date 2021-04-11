@@ -59,14 +59,14 @@ Stat = MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen)
 # For uni-site or multiple sites without considering spatial correlation
 Stat = GenRN(Setting, Stat)
 # For multiple sites. It will consider spatial correlation
-#Stat = MultiGenRn(Setting, Stat)
+Stat = MultiGenRn(Setting, Stat)
 
 
 # =============================================================================
 # Step5: Generate Weather Data
 # =============================================================================
 # Generate weather
-Wth_gen, Stat = Generate(Wth_gen, Setting, Stat)
+Wth_gen, Stat = Generate(Wth_gen, Setting, Stat, ParalCores = 1)
 
 
 

@@ -4,6 +4,7 @@ Created on Tue Mar 12 19:16:30 2019
 
 @author: Philip
 """
+from copy import deepcopy
 import pandas as pd
 import numpy as np
 from time import gmtime, strftime
@@ -22,6 +23,7 @@ def GenRN(Setting, Stat):
     if LeapYear: 
         if GenYear%4 != 0:
             print("GenYear has to be the multiple of 4 to generate leap year." )
+            input()
             quit()
         n = n + int(GenYear/4)
     for Stn in Stns:
@@ -53,6 +55,7 @@ def GenP(Wth_gen, Setting, Stat, Stn):
     # Expand monthly statistics to daily. Users are able to decide wheather apply smoothing.    
     if Smooth:
         print("The smoothing schema is not fully supported yet! Please change the \"smooth\" setting to false.")
+        input()
         quit()
     else:
         DailyStat_nonleap = pd.DataFrame(np.repeat(DailyStat.values, DayInMonth, axis=0), columns = list(DailyStat))
@@ -317,7 +320,6 @@ def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
     else:
         rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2001,12,31)))*int(GenYear)
         
-    print("Start weather generation in parallel.")
     def GenForAStn(Wth_gen, Setting, Stat, s):
         # Note that the RnNum has to be generated in advanced and stored in Stat
         Wth_gen = GenP(Wth_gen, Setting, Stat, s)
@@ -328,10 +330,18 @@ def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
         
         Wth_gen[s].index = pd.DatetimeIndex(rng)
         return Wth_gen[s]
-        
+    
+    Stat2 = deepcopy(Stat)
+    if Stat2.get("MultiSiteDict") is not None:
+        if Stat2["MultiSiteDict"].get("V2UCurve") is not None:
+            #Stat2["MultiSiteDict"]["V2UCurve"] = "Need to be re-generated when loaded from outside."
+            ParalCores = 1
+        else:
+            print("Start weather generation in parallel.")
+                
     WthParel = Parallel(n_jobs = ParalCores) \
                         ( delayed(GenForAStn)\
-                          (Wth_gen, Setting, Stat, s) \
+                          (Wth_gen, Setting, Stat2, s) \
                           for s in Stns \
                         ) 
     # Collect WthParel results

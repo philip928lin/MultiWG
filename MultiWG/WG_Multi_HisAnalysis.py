@@ -458,9 +458,11 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
         shape = [Wth_obv[s][Var].shape for s in Stns]
     except:
         print("Make sure all stations in Wth_obv obtain variables that you intend to generate.\n")
+        input()
         quit()
     if len(set(shape)) != 1:
         print("The sizes of input weather data are not identical. Please make sure all stations obtain same length of weather data.\n")
+        input()
         quit()
         
     # ["Weight"]
