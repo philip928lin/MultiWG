@@ -32,10 +32,10 @@ from MultiWG.WG_Multi_HisAnalysis import MultiHisAnalysis
 # Step 1: Create Task and prepare Setting file
 # =============================================================================
 Wth_obv, Wth_gen, Setting, Stat = CreateTask(wd = r"C:\Users\Philip\Documents\GitHub\MultiWG\Test_CC")
-#Setting["WDPath"] = r"C:\Users\Philip\Documents\GitHub\MultiWG\TestWD"
-Setting["StnID"] = ["467571"]#["467080", "467440", "467480", "467490", "467530", "467590", "467660"]  # Wth Stn ID "C0C540", "C0C630"
-Setting["ClimScenCsvFile"] = None #{"C0A5370":"C0A570_Scen_test.csv"} #{"467571":"C0A570_Scen_test.csv"}
-Setting["Var"] = ['PP01', 'TX01', 'TX02', 'TX04'] # ['PP01', 'TX02', 'TX04', 'TX01', 'GR01']#
+# #Setting["WDPath"] = r"C:\Users\Philip\Documents\GitHub\MultiWG\TestWD"
+# Setting["StnID"] = ["467490" "467080", "467440"]  #, "467480", "467490", "467530", "467590", "467660"]  # Wth Stn ID "C0C540", "C0C630"
+# Setting["ClimScenCsvFile"] = None #{"C0A5370":"C0A570_Scen_test.csv"} #{"467571":"C0A570_Scen_test.csv"}
+# Setting["Var"] = ['PP01', 'TX01', 'TX02', 'TX04'] # ['PP01', 'TX02', 'TX04', 'TX01', 'GR01']#
 
 # =============================================================================
 # Step2: Read-in Weather Data
@@ -59,7 +59,7 @@ Stat = MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen)
 # For uni-site or multiple sites without considering spatial correlation
 Stat = GenRN(Setting, Stat)
 # For multiple sites. It will consider spatial correlation
-Stat = MultiGenRn(Setting, Stat)
+#Stat = MultiGenRn(Setting, Stat)
 
 
 # =============================================================================

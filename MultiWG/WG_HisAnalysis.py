@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 11 12:13:10 2019
-
+This file contain the functions for historical data analysis.
+The "Stat" dictionary will contain all the analyzed information for later weather generation.
+ 
 @author: Philip
 """
 import pandas as pd 
@@ -11,6 +13,7 @@ from numpy.linalg import inv, lstsq
 import matplotlib.pyplot as plt
 from MultiWG.WG_General import PreProcess, ToPickle, SaveFig
 from MultiWG.WG_StatTest import PdistBIC, PdistTest, KSTestCDFPlot, NormalTest
+
 #%% P HisAnalysis
 def SelectPdist(Setting, Stat, Stn):
     if Setting["P_Distribution"] == "Auto":
@@ -57,7 +60,7 @@ def HisPAnalysis(Wth_obv, Setting, Stat):
         PrepDF["PP"] = PrepDF["PP"] + PrepDF["Pw"]
         
         # Estimate parameters for each month
-        Pw = []; Pwd = []; Pww = [];
+        Pw = []; Pwd = []; Pww = []
         Pexpon = []; Pgamma = []; Pweibull = []; Plognorm = []
         for m in range(12):
             PrepDF_m = PrepDF[PrepDF.index.month==(m+1)]
@@ -203,7 +206,7 @@ def DailyMuSig(Tw, Td, Setting):
 def Residual(Tw, Td, TFourierCoef, Setting):
     Var = Setting["Var"].copy(); Var.remove('PP01')
     FourierOrder = Setting["FourierOrder"]
-    Tw = Tw.copy(); Td = Td.copy()
+    #Tw = Tw.copy(); Td = Td.copy()
     WthObvYear = int(len(Tw)/365)
     # Form mu & sig array
     x = np.array(list(np.arange(1,365+1))*WthObvYear)

@@ -4,7 +4,8 @@ Created on Thu Dec 19 14:26:41 2019
 
 @author: Philip
 """
-from MultiWG.WG_Generation import Generate
+from copy import deepcopy
+from time import gmtime, strftime
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
@@ -12,11 +13,13 @@ from numpy.linalg import eig
 import matplotlib.pyplot as plt
 from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.optimize import curve_fit
-from MultiWG.WG_General import ToPickle
+from joblib import Parallel, delayed    # For parallelization
+from MultiWG.WG_General import ToPickle, Counter
+from MultiWG.WG_Generation import Generate
 
 # Calculate W for each var
 def CalWeight(MultiSiteDict, Setting, Wth_obv):
-    Var = Setting["Var"].copy() + ["P_Occurrence"] # Add prep event variable
+    Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     Stns = Setting["StnID"] 
     
     WeightPOrder = Setting["MultiSite"]["WeightPOrder"]
@@ -25,11 +28,11 @@ def CalWeight(MultiSiteDict, Setting, Wth_obv):
     for s in Stns:
          HisWthData[s]["P_Occurrence"] = HisWthData[s]["PP01"]
          HisWthData[s]["P_Occurrence"][HisWthData[s]["P_Occurrence"]>0] = 1
-    MultiSiteDict = MultiSiteDict.copy() # To prevent when error happens everything collapse
+    #MultiSiteDict = MultiSiteDict.copy() # To prevent when error happens everything collapse
     MultiSiteDict["Weight"] = {}    
     
     def Weight(MultiSiteDict, var):
-        MultiSiteDict = MultiSiteDict.copy() # To prevent when error happens everything collapse
+        #MultiSiteDict = MultiSiteDict.copy() # To prevent when error happens everything collapse
         WeightMethod = Setting["MultiSite"]["WeightMethod"]
         if type(WeightMethod) == dict:  # If they specify the method for each variables 
             WeightMethod = WeightMethod[var]
@@ -105,8 +108,8 @@ def SDI(npArray,W):
     return Iv
 
 def HisI(MultiSiteDict, Setting, Wth_obv, ForGenWth = False):
-    MultiSiteDict = MultiSiteDict.copy()
-    Var = Setting["Var"].copy() + ["P_Occurrence"] # Add prep event variable
+    #MultiSiteDict = MultiSiteDict.copy()
+    Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     Stns = Setting["StnID"] 
     SpatialAutoCorrIndex = Setting["MultiSite"]["SpatialAutoCorrIndex"]
     HisWthData = Wth_obv.copy()
@@ -220,8 +223,8 @@ def Standardization(r,W):
     
 # Single simulation of r 
 def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
-    MultiSiteDict = MultiSiteDict.copy()
-    Var = Setting["Var"].copy() + ["P_Occurrence"] # Add prep event variable
+    # MultiSiteDict = MultiSiteDict.copy()
+    Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     rSimYear = Setting["MultiSite"]["rSimYear"]
     Stns = Setting["StnID"] 
     plot = Setting["Plot"]["Multi_ECDFFittingPlot"]
@@ -265,7 +268,8 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
         Setting_Multi["Plot"][k] = False
     
     # Generate weather data and re-calculate spetial autocorrelation index
-    Wth_gen, Stat = Generate(Wth_gen, Setting_Multi, Stat, Export = False)
+    # Use single core here since we already distribute r into different cores/threads.
+    Wth_gen, Stat = Generate(Wth_gen, Setting_Multi, Stat, Export = False, ParalCores = 1)
     SimI = HisI(MultiSiteDict, Setting, Wth_gen, ForGenWth = False)["HisI"]
 
     # Calculate monthly mean for establish I-r curve
@@ -279,8 +283,8 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
 
 # Gen I for each r
 def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
-    MultiSiteDict = MultiSiteDict.copy()
-    Var = Setting["Var"].copy() + ["P_Occurrence"] # Add prep event variable
+    #MultiSiteDict = MultiSiteDict.copy()
+    Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     rSimDataPoint = Setting["MultiSite"]["rSimDataPoint"]
     
     # Calculate the range for each var and each month
@@ -323,10 +327,25 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
     RSimList = RSimList + list(new_rlist)
     
     # Start the simulation for each r in RSimList
+    print("Start to simulate I in parallel. (This will need some time.)")
+    Counter_All = Counter(); Counter_All.Start()
+    MultiSiteDict2 = deepcopy(MultiSiteDict) # To avoid original HisI been modified
+    RParel = Parallel(n_jobs = -1) \
+                        ( delayed(CalSimI)\
+                          (r, MultiSiteDict2, Setting, Stat, Wth_gen) \
+                          for r in RSimList \
+                        ) 
+    # Collect WthParel results
     SimIDict = {}
-    for r in tqdm(RSimList, desc = "CalSimI"):
-        MultiSiteDict2 = MultiSiteDict.copy() # To avoid original HisI been modified
-        SimIDict[r] = CalSimI(r, MultiSiteDict2, Setting, Stat, Wth_gen)
+    for i, r in enumerate(RSimList):
+        SimIDict[r] = RParel[i]
+    Counter_All.End()
+    print("SimIDict done! [",Counter_All.strftime,"]")
+    
+    # SimIDict = {}
+    # for r in tqdm(RSimList, desc = "CalSimI"):
+    #     MultiSiteDict2 = MultiSiteDict.copy() # To avoid original HisI been modified
+    #     SimIDict[r] = CalSimI(r, MultiSiteDict2, Setting, Stat, Wth_gen)
     MultiSiteDict["SimIDict"] = SimIDict
     MultiSiteDict["RSimList"] = RSimList
     return MultiSiteDict
@@ -358,8 +377,8 @@ def PolyFit(x,y,HisI_plot,plot = False,Title = "I vs r",xylabel = ["I","r"]):
 # Fitting I & r
 def IrCurveFitting(MultiSiteDict, Setting):
     # only fit PP01 Pevent and others not T
-    MultiSiteDict = MultiSiteDict.copy()
-    Var = Setting["Var"].copy() + ["P_Occurrence"] # Add prep event variable
+    #MultiSiteDict = MultiSiteDict.copy()
+    Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     Var = [v for v in Var if "TX" not in v] # No need to fit TX related var
     SimIDict = MultiSiteDict["SimIDict"]
     DayInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -392,8 +411,8 @@ def IrCurveFitting(MultiSiteDict, Setting):
     return MultiSiteDict
 
 def GenSimrV2UCurve(MultiSiteDict, Setting):
-    MultiSiteDict = MultiSiteDict.copy()
-    Var = Setting["Var"].copy() + ["P_Occurrence"] # Add prep event variable
+    #MultiSiteDict = MultiSiteDict.copy()
+    Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     HisI = MultiSiteDict["HisI"]
     IrCurvePar = MultiSiteDict["IrCurvePar"]
     DayInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -430,10 +449,10 @@ def GenSimrV2UCurve(MultiSiteDict, Setting):
     return MultiSiteDict
 
 def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
-    Stat = Stat.copy()
+    #Stat = Stat.copy()
     MultiSiteDict = {}
     # We nee to ensure the length of weather data in each station  is identical.
-    Var = Setting["Var"].copy()
+    Var = Setting["Var"]
     Stns = Setting["StnID"] 
     try:
         shape = [Wth_obv[s][Var].shape for s in Stns]

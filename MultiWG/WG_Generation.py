@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from time import gmtime, strftime
 from scipy.stats import expon, gamma, weibull_min, norm
+from joblib import Parallel, delayed    # For parallelization
 from MultiWG.WG_General import Counter, ToPickle, ToCSV
 from MultiWG.WG_ClimateScenario import UpdatePdist_MLE, TCliScenFactor_M2D
 
@@ -45,9 +46,9 @@ def GenP(Wth_gen, Setting, Stat, Stn):
     #  Calculate future parameters
     if Setting["ClimScenCsvFile"] is not None:
         UpdatePdist_MLE(Setting, Stat)  
-        DailyStat = Stat[Stn]["MonthlyStatCC"].copy()
+        DailyStat = Stat[Stn]["MonthlyStatCC"]#.copy()
     else:
-        DailyStat = Stat[Stn]["MonthlyStat"].copy()
+        DailyStat = Stat[Stn]["MonthlyStat"]#.copy()
         
     # Expand monthly statistics to daily. Users are able to decide wheather apply smoothing.    
     if Smooth:
@@ -303,28 +304,60 @@ def DumpCheck(Wth_gen, Setting, Stat, s):
         Wth_gen[s][v] = Data
     return Wth_gen
 
-def Generate(Wth_gen, Setting, Stat, Export = True):
+def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
     Stns = Setting["StnID"]
     dumpcheck = Setting["DumpCheck"]
     Counter_All = Counter(); Counter_All.Start()
-    for s in Stns:
-        Counter_Stn = Counter(); Counter_Stn.Start()
-        print("Start to generate ",s,"......")
+    
+    # DatetimeIndex
+    GenYear = Setting["GenYear"]
+    LeapYear = Setting["LeapYear"]     
+    if LeapYear:
+        rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2004,12,31)))*int(GenYear/4)
+    else:
+        rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2001,12,31)))*int(GenYear)
+        
+    print("Start weather generation in parallel.")
+    def GenForAStn(Wth_gen, Setting, Stat, s):
         # Note that the RnNum has to be generated in advanced and stored in Stat
         Wth_gen = GenP(Wth_gen, Setting, Stat, s)
         Wth_gen = GenT(Wth_gen, Setting, Stat, s)
         if dumpcheck:
             Wth_gen = DumpCheck(Wth_gen, Setting, Stat, s)
-        Counter_Stn.End()
-        print("Finish ",s,". [",Counter_Stn.strftime,"]")
-        # Add false date index
-        GenYear = Setting["GenYear"]
-        LeapYear = Setting["LeapYear"]     
-        if LeapYear:
-            rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2004,12,31)))*int(GenYear/4)
-        else:
-            rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2001,12,31)))*int(GenYear)
+        # Add false date index (Only the for the program to use datetimeIndex).
+        
         Wth_gen[s].index = pd.DatetimeIndex(rng)
+        return Wth_gen[s]
+        
+    WthParel = Parallel(n_jobs = ParalCores) \
+                        ( delayed(GenForAStn)\
+                          (Wth_gen, Setting, Stat, s) \
+                          for s in Stns \
+                        ) 
+    # Collect WthParel results
+    for i, s in enumerate(Stns):
+        Wth_gen[s] = WthParel[i]
+
+    # for s in Stns:
+    #     Counter_Stn = Counter(); Counter_Stn.Start()
+    #     print("Start to generate ",s,"......")
+    #     # Note that the RnNum has to be generated in advanced and stored in Stat
+    #     Wth_gen = GenP(Wth_gen, Setting, Stat, s)
+    #     Wth_gen = GenT(Wth_gen, Setting, Stat, s)
+    #     if dumpcheck:
+    #         Wth_gen = DumpCheck(Wth_gen, Setting, Stat, s)
+    #     Counter_Stn.End()
+    #     print("Finish ",s,". [",Counter_Stn.strftime,"]")
+    #     # Add false date index
+    #     GenYear = Setting["GenYear"]
+    #     LeapYear = Setting["LeapYear"]     
+    #     if LeapYear:
+    #         rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2004,12,31)))*int(GenYear/4)
+    #     else:
+    #         rng = list(pd.date_range( pd.datetime(2001,1,1), pd.datetime(2001,12,31)))*int(GenYear)
+    #     Wth_gen[s].index = pd.DatetimeIndex(rng)
+        
+        
     Counter_All.End()
     # Save
     if Export:
