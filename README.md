@@ -1,5 +1,6 @@
 # MultiWG 
 A uni-site and multi-site stochastic weather generator.
+
 ![](https://i.imgur.com/9NSyoJj.png)
 
 Please check sample code at Sample_code and sample setting.json at Sample_WD.
