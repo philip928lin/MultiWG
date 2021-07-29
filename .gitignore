@@ -1,7 +1,6 @@
 # WD
-Sample_WD/OUT/*
-# exception to the rule
-!somefolder/OUT/This is output folder.txt
+Sample_WD/OUT/.csv
+Sample_WD/OUT/.pickle
 **/Sample_WD/Stat.pickle
 
 # Byte-compiled / optimized / DLL files
