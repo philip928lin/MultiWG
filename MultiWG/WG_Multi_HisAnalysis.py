@@ -28,15 +28,19 @@ def CalWeight(MultiSiteDict, Setting, Wth_obv):
     for s in Stns:
          HisWthData[s]["P_Occurrence"] = HisWthData[s]["PP01"]
          HisWthData[s]["P_Occurrence"][HisWthData[s]["P_Occurrence"]>0] = 1
-    #MultiSiteDict = MultiSiteDict.copy() # To prevent when error happens everything collapse
+    # To prevent when error happens everything collapse
+    #MultiSiteDict = MultiSiteDict.copy() 
     MultiSiteDict["Weight"] = {}    
     
     def Weight(MultiSiteDict, var):
-        #MultiSiteDict = MultiSiteDict.copy() # To prevent when error happens everything collapse
+        # To prevent when error happens everything collapse
+        #MultiSiteDict = MultiSiteDict.copy() 
         WeightMethod = Setting["MultiSite"]["WeightMethod"]
-        if type(WeightMethod) == dict:  # If they specify the method for each variables 
+         # If they specify the method for each variables 
+        if type(WeightMethod) == dict:
             WeightMethod = WeightMethod[var]
-        Order = 1 # For other var we use order = 1 (power of the weight matrix)
+        # For other var we use order = 1 (power of the weight matrix)
+        Order = 1
         if var == "PP01":
             Order = WeightPOrder[0]
         elif var == "P_Occurrence":
@@ -51,7 +55,7 @@ def CalWeight(MultiSiteDict, Setting, Wth_obv):
     #    if WeightMethod == "SID": # Square Inversed Distance
     #        Location = MultiSiteDict.get("Location")
     #        Location = list(Location.values())
-    #        Dist = scipy.spatial.distance.cdist(Location, Location, 'euclidean')
+    #        Dist = scipy.spatial.distance.cdist(Location,Location,'euclidean')
     #        Dist = 1/Dist**2
     #        np.fill_diagonal(Dist, 0)
     #        MultiSiteDict["Weight"][var] = {}
@@ -62,7 +66,8 @@ def CalWeight(MultiSiteDict, Setting, Wth_obv):
             # Collect wth data from all stations
             for s in Stns:  
                 HisWthofAllStns[s] = HisWthData[s][var]
-            HisWthofAllStns.index = list(np.arange(0,365))*int(HisWthofAllStns.shape[0]/365) 
+            HisWthofAllStns.index = list(np.arange(0,365))\
+                                    * int(HisWthofAllStns.shape[0]/365) 
             
             # For rainfall amount simulation, eliminate all dry days
             if var == "PP01":
@@ -70,10 +75,14 @@ def CalWeight(MultiSiteDict, Setting, Wth_obv):
             MultiSiteDict["Weight"][var] = {}
             accday = 0
             for m in range(12):
-                HisWthofAllStns_m = HisWthofAllStns[[i in range(accday,accday+DayInMonth[m]) for i in HisWthofAllStns.index.tolist()]] # Extract month data for every year
+                mask = [i in range(accday,accday+DayInMonth[m]) \
+                        for i in HisWthofAllStns.index.tolist()]
+                # Extract month data for every year
+                HisWthofAllStns_m = HisWthofAllStns[mask] 
                 accday = accday + DayInMonth[m]
                 Corr = np.array(HisWthofAllStns_m.corr())
-                np.fill_diagonal(Corr, 0) # We are counting the weight for other stns.
+                # We are counting the weight for other stns.
+                np.fill_diagonal(Corr, 0)
                 Corr = Corr**Order
                 MultiSiteDict["Weight"][var][m+1] = Row_standardize(Corr)
         return MultiSiteDict
@@ -93,7 +102,8 @@ def MoransI(npArray,W):
     d = (d - np.mean(d,axis=0)).T  #(xi - xavg)
     Iv = []
     for i in range(d.shape[0]):
-        Iv.append(np.sum(W*np.dot(d[i].reshape((L,1)),d[i].reshape((1,L))))/np.sum(d[i]**2))    
+        Iv.append( np.sum(W * np.dot(d[i].reshape((L,1)),
+                                     d[i].reshape((1,L)))) / np.sum(d[i]**2) )    
     return Iv
 
 def SDI(npArray,W):
@@ -104,7 +114,8 @@ def SDI(npArray,W):
     d = d.T
     Iv = []
     for i in range(d.shape[0]):
-        Iv.append(np.sum(W*np.dot(d[i].reshape((L,1)),d[i].reshape((1,L))))/np.sum(d[i]**2))    
+        Iv.append(np.sum(W * np.dot(d[i].reshape((L,1)),
+                                    d[i].reshape((1,L)))) / np.sum(d[i]**2))    
     return Iv
 
 def HisI(MultiSiteDict, Setting, Wth_obv, ForGenWth = False):
@@ -122,7 +133,11 @@ def HisI(MultiSiteDict, Setting, Wth_obv, ForGenWth = False):
     #  For handling final generation wth data with leap year setting   ?????
 #    LeapYear = Setting["LeapYear"]
 #    if LeapYear and ForGenWth:
-#        rng = list(pd.date_range( pd.datetime(2013,1,1), pd.datetime(2016,12,31)))*int(SimYear/4)+list(pd.date_range( pd.datetime(2013,1,1), pd.datetime(2013+SimYear%4-1,12,31)))
+#        rng = list(pd.date_range( 
+#                   pd.datetime(2013,1,1), 
+#                   pd.datetime(2016,12,31)))*int(SimYear/4)\
+#                    + list(pd.date_range( pd.datetime(2013,1,1), 
+#                   pd.datetime(2013+SimYear%4-1,12,31)))
 #        for s in Stns:
 #            GenWth = MultiSiteDict.get("HisWthData").get(s) 
 #            GenWth.index = pd.DatetimeIndex(rng)
@@ -131,7 +146,8 @@ def HisI(MultiSiteDict, Setting, Wth_obv, ForGenWth = False):
     # =========================================================================
     I = []
     for v in tqdm(Var,desc = "Cal HisI"):   
-        if type(SpatialAutoCorrIndex) == dict:  # If they specify the method for each variables 
+        # If they specify the method for each variables 
+        if type(SpatialAutoCorrIndex) == dict: 
             SpatialAutoCorrIndex = SpatialAutoCorrIndex[v]
         # Extract series
         d = np.array([list(HisWthData[s].loc[:,v]) for s in Stns])            
@@ -153,7 +169,9 @@ def HisI(MultiSiteDict, Setting, Wth_obv, ForGenWth = False):
                 Iv = Iv + iv
             accyear += 1        
         #if v != "PP01":
-        Iv = pd.Series(Iv).fillna(1) # if all stations are dry or wet or the amount are all 0 then we assign spatial autocorrelation to 1
+        # if all stations are dry or wet or the amount are all 0 then we
+        # assign spatial autocorrelation to 1
+        Iv = pd.Series(Iv).fillna(1) 
         Iv = np.nanmean( np.reshape(np.array(Iv), (-1,365)) ,axis = 0) 
         I.append(Iv)
     I = pd.DataFrame(np.array(I).T,columns=Var) # Transform to df
@@ -192,7 +210,8 @@ def GenMultiRN(r,W,Type,Size = 1,TransformFunc = None,Warn = True,HisGen = False
 # For Rainfall uniform transformation
 # Transformation: To convert V(n) into U[0,1] again
 def ECDFFitting(r,W,plot = False):
-    Vlist = list(GenMultiRN(r,W,Type = "P", Size = 10000,Warn = False,HisGen = True).ravel())
+    Vlist = list(GenMultiRN(r,W,Type = "P", Size = 10000,
+                            Warn = False,HisGen = True).ravel())
     Vlist = sorted(Vlist)
     ecdf = ECDF(Vlist)
     Fx = ecdf(Vlist)
@@ -213,7 +232,8 @@ def ECDFFitting(r,W,plot = False):
 # For other than Rainfall N(0,1) transformation
 # Transformation:For T standardization
 def Standardization(r,W):
-    Vlist = list(GenMultiRN(r,W,Type = "T", Size = 10000,Warn = False,HisGen = True).ravel())
+    Vlist = list(GenMultiRN(r,W,Type = "T", Size = 10000,
+                            Warn = False,HisGen = True).ravel())
     Vlist = np.array(Vlist)
     Avg = np.mean(Vlist)
     Std = np.std(Vlist, ddof=1)
@@ -233,7 +253,8 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
     
     # Simulate spatial correlated RN
     for v in Var:        
-        # Gen 40 years for the size is greater than 1000 for each month, which we consider as statistically robust
+        # Gen 40 years for the size is greater than 1000 for each month,
+        # which we consider as statistically robust
         Rn = 0
         for y in range(rSimYear):
             for m in range(12):
@@ -241,9 +262,13 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
                 W = MultiSiteDict["Weight"][v][m+1]
                 # Gen Rn
                 if v == "PP01" or "P_Occurrence":
-                    rn = GenMultiRN(r, W, Type = "P", Size = day_in_month, TransformFunc = ECDFFitting(r,W,plot),HisGen = True) 
+                    rn = GenMultiRN(r, W, Type = "P", Size = day_in_month,
+                                    TransformFunc = ECDFFitting(r,W,plot),
+                                    HisGen = True) 
                 else:
-                    rn = GenMultiRN(r, W, Type = "T", Size = day_in_month, TransformFunc = Standardization(r,W),HisGen = True)
+                    rn = GenMultiRN(r, W, Type = "T", Size = day_in_month,
+                                    TransformFunc = Standardization(r,W),
+                                    HisGen = True)
                 # Add up
                 if type(Rn) is int: 
                     Rn = rn
@@ -259,17 +284,23 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
             RnNum[v] = SpatialRnNum[v][i]         
         Stat[s]["RnNum"] = RnNum
     
-    # Creat the "Setting" dictionary for I-r curve simulation. We need to turn off the leap year option to make sure the output are able to be iterate
+    # Creat the "Setting" dictionary for I-r curve simulation. We need 
+    # to turn off the leap year option to make sure the output are able 
+    # to be iterate
     Setting_Multi = Setting.copy()
     Setting_Multi["GenYear"] = rSimYear
     Setting_Multi["LeapYear"] = False 
     Setting_Multi["Condition"] = True
-    for k in list(Setting_Multi["Plot"].keys()): # Ture off all plotting options
+    # Ture off all plotting options
+    for k in list(Setting_Multi["Plot"].keys()):
         Setting_Multi["Plot"][k] = False
     
-    # Generate weather data and re-calculate spetial autocorrelation index
-    # Use single core here since we already distribute r into different cores/threads.
-    Wth_gen, Stat = Generate(Wth_gen, Setting_Multi, Stat, Export = False, ParalCores = 1)
+    # Generate weather data and re-calculate spetial autocorrelation 
+    # index
+    # Use single core here since we already distribute r into different 
+    # cores/threads.
+    Wth_gen, Stat = Generate(Wth_gen, Setting_Multi, Stat, Export = False,
+                             ParalCores = 1)
     SimI = HisI(MultiSiteDict, Setting, Wth_gen, ForGenWth = False)["HisI"]
 
     # Calculate monthly mean for establish I-r curve
@@ -303,7 +334,9 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
     MultiSiteDict["rRange"]["Rmax"] = Rmax
     MultiSiteDict["rRange"]["Rmin"] = Rmin
     # Form the rlist to simulate and to form the IrCurve later on
-    # Note that for TX01 TX02 TX04 (TX related var), we simply apply their rmax for the generation. No need to form the IrCurve due to their always high spatial correlation.
+    # Note that for TX01 TX02 TX04 (TX related var), we simply apply 
+    # their rmax for the generation. No need to form the IrCurve due to 
+    # their always high spatial correlation.
     Var_No_TX = [v for v in Var if "TX" not in v]
     rlist = []; RSimList = []; minRange = 1000 # just a initial value
     for v in Var_No_TX:
@@ -312,8 +345,11 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
             rmin = MultiSiteDict["rRange"]["Rmin"].loc[m+1, v]
             minRange = min(minRange,rmax-rmin)
             RSimList.append(rmax); RSimList.append(rmin)
-            rlist = rlist + [round(rmin+i*(rmax-rmin)/(rSimDataPoint),4) for i in range(1,rSimDataPoint)]
-    # Elminate closed r point in r list to alleviate the computational time. We will make sure the min range still obtain enough data points.
+            rlist = rlist + [round(rmin+i*(rmax-rmin)/(rSimDataPoint),4) \
+                             for i in range(1,rSimDataPoint)]
+    # Elminate closed r point in r list to alleviate the computational 
+    # time. We will make sure the min range still obtain enough data 
+    # points.
     interval = minRange/rSimDataPoint
     rlist.sort() # ascending
     rlist = np.array(rlist)
@@ -322,14 +358,16 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
         Acc = new_rlist[-1] + interval
         new_rlist.append(rlist[rlist <= Acc][-1])
     
-    # Form the final r list which add the extreme points of each var in each month + interval points
+    # Form the final r list which add the extreme points of each var in 
+    # each month + interval points
     RSimList = list(set(RSimList))
     RSimList = RSimList + list(new_rlist)
     
     # Start the simulation for each r in RSimList
     print("Start to simulate I in parallel. (This will need some time.)")
     Counter_All = Counter(); Counter_All.Start()
-    MultiSiteDict2 = deepcopy(MultiSiteDict) # To avoid original HisI been modified
+    # To avoid original HisI been modified
+    MultiSiteDict2 = deepcopy(MultiSiteDict)
     RParel = Parallel(n_jobs = -1) \
                         ( delayed(CalSimI)\
                           (r, MultiSiteDict2, Setting, Stat, Wth_gen) \
@@ -344,7 +382,8 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
     
     # SimIDict = {}
     # for r in tqdm(RSimList, desc = "CalSimI"):
-    #     MultiSiteDict2 = MultiSiteDict.copy() # To avoid original HisI been modified
+    ## To avoid original HisI been modified
+    #     MultiSiteDict2 = MultiSiteDict.copy()
     #     SimIDict[r] = CalSimI(r, MultiSiteDict2, Setting, Stat, Wth_gen)
     MultiSiteDict["SimIDict"] = SimIDict
     MultiSiteDict["RSimList"] = RSimList
@@ -403,7 +442,8 @@ def IrCurveFitting(MultiSiteDict, Setting):
             name = v+" I vs r " +"(Month "+str(m+1)+" )"
             plot = Setting["Plot"]["Multi_IrCurveFittingPlot"] 
             #plot = True
-            PolyFuncPar = PolyFit(I, rlist, HisI, plot, Title = name, xylabel = ["I","r"])
+            PolyFuncPar = PolyFit(I, rlist, HisI, plot, Title = name,
+                                  xylabel = ["I","r"])
             mCurve.append(PolyFuncPar)
         IrCurvePar[v] = mCurve
     IrCurvePar.index = np.arange(1,13)
@@ -434,7 +474,9 @@ def GenSimrV2UCurve(MultiSiteDict, Setting):
                     # Simr
                     PolyFuncPar = IrCurvePar.loc[m+1,v]
                     rmax = MultiSiteDict["rRange"]["Rmax"].loc[m+1, v]
-                    simr.append( min(rmax, PolyFunc(HisI.loc[count,v],*PolyFuncPar) ) ) # Make sure that r is not exceed rmax
+                    # Make sure that r is not exceed rmax
+                    simr.append( min(rmax,
+                                     PolyFunc(HisI.loc[count,v],*PolyFuncPar))) 
                     # V2Ucurve
                     if v == "PP01" or v == "P_Occurrence":
                         v2UCurve.append(ECDFFitting(simr[-1], W, plot = False)) 
@@ -449,6 +491,17 @@ def GenSimrV2UCurve(MultiSiteDict, Setting):
     return MultiSiteDict
 
 def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
+    """Simulate statistics for multi-cite weather generation.
+
+    Args:
+        Stat (dict): Stat dictionary.
+        Setting (dict): Setting dictionary.
+        Wth_obv (dict): Observed weather dictionary.
+        Wth_gen (dict): Generated weather dictionary.
+
+    Returns:
+        dict: Stat
+    """
     #Stat = Stat.copy()
     MultiSiteDict = {}
     # We nee to ensure the length of weather data in each station  is identical.
@@ -457,11 +510,14 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     try:
         shape = [Wth_obv[s][Var].shape for s in Stns]
     except:
-        print("Make sure all stations in Wth_obv obtain variables that you intend to generate.\n")
+        print("Make sure all stations in Wth_obv obtain variables that "
+              +"you intend to generate.\n")
         input()
         quit()
     if len(set(shape)) != 1:
-        print("The sizes of input weather data are not identical. Please make sure all stations obtain same length of weather data.\n")
+        print("The sizes of input weather data are not identical. "
+              +"Please make sure all stations obtain same length of "
+              +"weather data.\n")
         input()
         quit()
         
@@ -473,16 +529,19 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat
     
-    # Calculate spatial correlation Moran's I for 365 days averaging through years
+    # Calculate spatial correlation Moran's I for 365 days averaging
+    # through years
     # ["HisI"]
     try:
-        MultiSiteDict = HisI(MultiSiteDict, Setting, Wth_obv, ForGenWth = False)
+        MultiSiteDict = HisI(MultiSiteDict, Setting, Wth_obv,
+                             ForGenWth = False)
     except:
         print("Error at HisI.")
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat
     #MultiSiteDict = HisMoranI(MultiSiteDict)
-    # Simulate weather data and calculate Moran' I across the range of r and calculate monthly mean and average through years
+    # Simulate weather data and calculate Moran' I across the range of 
+    # r and calculate monthly mean and average through years
     # ["SimIDict"], ["SimRlists"]
     try:
         MultiSiteDict = CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen)
@@ -501,7 +560,8 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
         return Stat
     #MultiSiteDict = IrCurveFitting(MultiSiteDict,True)
     
-    # Using His I and IrCurvePar to form r for 365 days and V2UCurve for each month and each var (P: to uniform, T: standardize)
+    # Using His I and IrCurvePar to form r for 365 days and V2UCurve for
+    # each month and each var (P: to uniform, T: standardize)
     # ["Simr"], ["V2UCurve"]
     try:
         MultiSiteDict = GenSimrV2UCurve(MultiSiteDict, Setting)     

@@ -19,14 +19,19 @@ def CheckSetting(Setting):
     def check(Set):
         if len(list(Hcc)) > 0:
             print("Missing ",list(Hcc)," in Setting dictionary.\n")
-            print("Please use the provided template by calling \"CreateTask()\".")
+            print("Please use the provided template by calling"
+                  +" \"CreateTask()\".")
             return True
     # To assert the keys are given in the dict
     # Required keys in the dict
-    H = ['WDPath', 'StnID', 'WthObvCsvFile', 'ClimScenCsvFile', 'Var', 'P_Threshold', 'P_Distribution', 'GenYear', 'Condition', 'LeapYear', 'Smooth', 'FourierOrder', 'Plot', 'StatTestAlpha', 'MultiSite']
-    H_plot = ['FourierDailyTFit', 'KSTestCDFPlot', 'Multi_ECDFFittingPlot', 'Multi_IrCurveFittingPlot']
+    H = ['WDPath', 'StnID', 'WthObvCsvFile', 'ClimScenCsvFile', 'Var', 
+         'P_Threshold', 'P_Distribution', 'GenYear', 'Condition', 'LeapYear', 
+         'Smooth', 'FourierOrder', 'Plot', 'StatTestAlpha', 'MultiSite']
+    H_plot = ['FourierDailyTFit', 'KSTestCDFPlot', 'Multi_ECDFFittingPlot', 
+              'Multi_IrCurveFittingPlot']
     H_stat = ['PDistTest', 'Kruskal_Wallis_Test']
-    H_multisite = ['SpatialAutoCorrIndex', 'WeightMethod', 'WeightPOrder', 'rSimDataPoint', "rSimYear"]
+    H_multisite = ['SpatialAutoCorrIndex', 'WeightMethod', 'WeightPOrder', 
+                   'rSimDataPoint', "rSimYear"]
     Hsub = ["Plot", "StatTestAlpha", 'MultiSite']
     Hc = set(H) - set(H).intersection(Setting.keys())
     Hcc = Hc.intersection(Hsub)
@@ -34,12 +39,15 @@ def CheckSetting(Setting):
     # Checking keys
     if check(Hcc): return False
     Hc_plot = set(H_plot) - set(H_plot).intersection(Setting["Plot"].keys())
-    Hc_stat = set(H_stat) - set(H_stat).intersection(Setting["StatTestAlpha"].keys())
+    Hc_stat = set(H_stat) \
+            - set(H_stat).intersection(Setting["StatTestAlpha"].keys())
     if Setting["MultiSite"] is None:
-        print("This Setting is only eligible for weather generation without considering spatial correlation.")
+        print("This Setting is only eligible for weather generation without"
+              +" considering spatial correlation.")
         Hc_multi = []
     else:
-        Hc_multi = set(H_multisite) - set(H_multisite).intersection(Setting["MultiSite"].keys())
+        Hc_multi = set(H_multisite) \
+            - set(H_multisite).intersection(Setting["MultiSite"].keys())
     if check(Hc_plot) or check(Hc_stat) or check(Hc_multi):
         return False
     
@@ -50,13 +58,15 @@ def CheckSetting(Setting):
     
     # Checking FourierOrder
     if Setting["FourierOrder"] is None or Setting["FourierOrder"] < 2:
-        print("Please assign the \"FourierOrder\" with an integer equal or higher than 2.")
+        print("Please assign the \"FourierOrder\" with an integer equal or "
+              +"higher than 2.")
         return False
     
     # Checking MultiSite setting
     if Setting["MultiSite"] is not None:
         if Setting["MultiSite"]["rSimYear"]%4 != 0:
-            print("Please set rSimYear in MultiSite Setting to the multiple of 4. We suggest to set 40.")
+            print("Please set rSimYear in MultiSite Setting to the multiple "
+                  +"of 4. We suggest to set 40.")
             return False
     
     return True
@@ -73,10 +83,12 @@ def ToJson(Setting, filename, Dict):
 def ToPickle(Setting, filename, Dict):
     WDPath = Setting["WDPath"]
     Dict1 = copy.deepcopy(Dict)
-    # Eliminate functions type variables since functions cannot be saved as pickle
+    # Eliminate functions type variables since functions cannot be saved
+    # as pickle
     if "MultiSiteDict" in list(Dict1.keys()):
         if "V2UCurve" in list(Dict1["MultiSiteDict"].keys()):
-            Dict1["MultiSiteDict"]["V2UCurve"] = "Need to be re-generated when loaded from outside."
+            Dict1["MultiSiteDict"]["V2UCurve"] = "Need to be re-generated "\
+                                                 +"when loaded from outside."
     with open(os.path.join(WDPath,filename), 'wb') as handle:
         pickle.dump(Dict1, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return None
@@ -86,11 +98,21 @@ def ToCSV(Setting, Dict, commonfilename = ""):
     Stns = Setting["StnID"]
     WDPath = Setting["WDPath"]
     for s in Stns:
-        Dict[s].to_csv(os.path.join(WDPath,"OUT",commonfilename+s+"_"+strftime("%Y%m%d_%H%M%S", gmtime())+".csv"))
+        Dict[s].to_csv(os.path.join(
+            WDPath,"OUT",
+            commonfilename+s+"_"+strftime("%Y%m%d_%H%M%S", gmtime())+".csv"))
     return None
 
 # Create a set of empty storage variables
-def CreateTask(wd = None):
+def CreateTask(wd=None):
+    """Create the working folder and task if not exist.
+
+    Args:
+        wd (str, optional): Working directory. Defaults to None.
+
+    Returns:
+        [list]: [Wth_obv, Wth_gen, Setting, Stat]
+    """
     # Create WD folders if not exists
     def CreateFolders(working_dirctory):
         if not os.path.exists(os.path.join(working_dirctory,"DATA")):
@@ -141,14 +163,13 @@ def CreateTask(wd = None):
         print("Please correct your Setting.json and run again!")
     return [Wth_obv, Wth_gen, Setting, Stat]
 
-
-#print("For monthly low frequency correction, the observed year have to be even. Please make sure the year number is correct or the program will automatically drop the last year for low frequency correction. BTW 產製資料是obv的倍數")
-
 # Single version of ReadWthObv
 def PreProcess(df_WthObv, Setting):
     Var = Setting["Var"].copy(); Var.remove('PP01')
-    df_WthObv = df_WthObv[~((df_WthObv.index.month == 2) & (df_WthObv.index.day == 29))] # Eliminate leap year
+    # Eliminate leap year
     # Set all kind of error value to Nan
+    df_WthObv = df_WthObv[~((df_WthObv.index.month == 2) \
+                          & (df_WthObv.index.day == 29))] 
     df_WthObv['PP01'][df_WthObv['PP01']<0] = np.nan 
     for v in Var:
         if "TX" in v:
@@ -170,7 +191,8 @@ def ReadWthObv(Wth_obv, Setting, Stat):
     # 可以改平行運算!!
     def readfile(WthObvPath):
         try:
-            df = pd.read_csv(WthObvPath, usecols=["Date"]+Var, parse_dates = ["Date"], index_col = "Date")
+            df = pd.read_csv(WthObvPath, usecols=["Date"]+Var,
+                             parse_dates = ["Date"], index_col = "Date")
             df = df.loc[df.index.dropna()]
             return df
         except IOError:
@@ -181,7 +203,8 @@ def ReadWthObv(Wth_obv, Setting, Stat):
         if Setting["WthObvCsvFile"] is None:
             WthObvPath = os.path.join(WDPath, "DATA", s+".csv")
         else:
-            WthObvPath = os.path.join(WDPath, "DATA", Setting["WthObvCsvFile"][s])
+            WthObvPath = os.path.join(WDPath, "DATA",
+                                      Setting["WthObvCsvFile"][s])
         df_WthObv = readfile(WthObvPath) # Read in CSV observed wth data
         print("\n", s)
         Wth_obv[s] = PreProcess(df_WthObv, Setting)
@@ -206,7 +229,8 @@ def ReadScen(Setting, Stat):
         if Setting["ClimScenCsvFile"] is None:
             Stat[s]["CliScenFactor"] = None
         else:
-            ScenPath = os.path.join(WDPath, "DATA", Setting["ClimScenCsvFile"][s])
+            ScenPath = os.path.join(WDPath, "DATA",
+                                    Setting["ClimScenCsvFile"][s])
             df_Scen = readfile(ScenPath) # Read in CSV observed wth data
             df_Scen.index = np.arange(1,13)
             Stat[s]["CliScenFactor"] = df_Scen
@@ -218,7 +242,10 @@ def ReadFiles(Wth_obv, Setting, Stat):
 
 def SaveFig(fig, name, Setting, FigFormat = ".png"):
     WDPath = Setting["WDPath"]
-    fig.savefig(os.path.join(WDPath, "OUT", name+"_"+strftime("%Y%m%d_%H%M%S", gmtime()) + FigFormat), dpi = 500)
+    fig.savefig(os.path.join(
+        WDPath, "OUT", 
+        name+"_"+strftime("%Y%m%d_%H%M%S", gmtime()) + FigFormat), 
+                dpi = 500)
     
 class Counter:
     def __ini__(self):

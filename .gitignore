@@ -1,3 +1,7 @@
+# WD
+Sample_WD/OUT
+**/Sample_WD/Stat.pickle
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

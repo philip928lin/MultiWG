@@ -10,7 +10,8 @@ from MultiWG.WG_General import CreateTask, ReadFiles, ToCSV
 from MultiWG.WG_HisAnalysis import HisAnalysis, MCplot
 from MultiWG.WG_Generation import Generate, GenRN
 from MultiWG.WG_Multi_RNGen import MultiGenRn
-from MultiWG.WG_StatTest import MonthlyStatPlot, Kruskal_Wallis_Test, SpatialAutoCorrelationComparison 
+from MultiWG.WG_StatTest import (MonthlyStatPlot, Kruskal_Wallis_Test,
+                                 SpatialAutoCorrelationComparison)
 from MultiWG.WG_Multi_HisAnalysis import MultiHisAnalysis
 import os
 
@@ -63,19 +64,22 @@ if __name__ == "__main__":
     # Checking folder setting
     Wth_obv, Wth_gen, Setting, Stat = CreateTask(wd = WorkingDir)
     if Setting["WDPath"] != WorkingDir:
-        print("\nThe WDPath in existed Setting.json is not corresponding to the working directory that you entered.")
+        print("\nThe WDPath in existed Setting.json is not corresponding"
+              +" to the working directory that you entered.")
         input()
         quit()
     
     # Checking weather to apply multisite generation
-    print("\nDo you want to generate multi-site weather data with consideration of spatial auto correlation? [y/n]\n")
+    print("\nDo you want to generate multi-site weather data with "
+          +"consideration of spatial auto correlation? [y/n]\n")
     Multi = input()
     # Start simulation
     try:
-        print("\n################################################################")
+        print("\n######################################################")
         print("Start to generate........")
         if Multi == "y":
-            Wth_obv, Wth_gen, Setting, Stat = main(WorkingDir, SpatialCorr = True)
+            Wth_obv, Wth_gen, Setting, Stat = main(WorkingDir,
+                                                   SpatialCorr = True)
         else:
             Wth_obv, Wth_gen, Setting, Stat = main(WorkingDir)
         print("\nPlease find your results under OUT folder.")
@@ -83,19 +87,26 @@ if __name__ == "__main__":
             print("Do you want to output the validation result? [y/n]")
             ans3 = input()
             if ans3 == "y":
-                ## Checking first and second moments among weather variables 
+                ## Checking first and second moments among weather
+                # variables 
                 CompareResult = MonthlyStatPlot(Wth_gen, Wth_obv, Setting)
                 ## Checking precipitation distribution
                 KruskalDict = Kruskal_Wallis_Test(Wth_gen, Wth_obv, Setting)
-                ToCSV(Setting, KruskalDict, commonfilename = "KruskalPrepDistTest")
-                ## Checking Markov parameters for generating pricipitation events
+                ToCSV(Setting, KruskalDict,
+                      commonfilename = "KruskalPrepDistTest")
+                ## Checking Markov parameters for generating
+                # pricipitation events
                 MCplot(Wth_gen, Stat, Setting)
                 ## Checking daily and monthly spatial auto correlation
                 if Multi == "y":
                     SpatialAutoCorrelationComparison(Setting, Stat, Wth_gen)
-                print("Done! Check outputs at OUT folder: \"KruskalPrepDistTest.csv\", MonthlyStatPlot.png ,and MCplot.png")
+                print("Done! Check outputs at OUT folder: "
+                      +"\"KruskalPrepDistTest.csv\", MonthlyStatPlot.png"
+                      +" ,and MCplot.png")
     except:
-        print("Please check your data csv files are in DATA folder and your Setting.json file is modified under your working directory.\n")
+        print("Please check your data csv files are in DATA folder and"
+              +" your Setting.json file is modified under your working"
+              +" directory.\n")
     input()
     quit()
         
