@@ -6,7 +6,18 @@ A uni-site and multi-site stochastic weather generator.
 This is the first release of Multi-site stochastic Weather Generator (MultiWG). MultiWG provides an easy way for users to generate uni-site or multi-site weather in parallel. We also support some basic validation functions allowing users to validate WG simulated baseline results.
 Please check sample code at Sample_code and sample setting.json at Sample_WD.
 
-User guide is coming soon.
+### Install
+Directly from Github
+```
+pip install git+https://github.com/philip928lin/MultiWG.git
+```
+or manually install the package through setup.py
+```
+# Move to the setup.py folder and run
+pip install .
+```
+
+User guide is coming soon. For the mean time, please check sample code at Sample_code and sample setting.json at Sample_WD.
 
 Contact philip928lin@gmail.com if there are any questions.
 
