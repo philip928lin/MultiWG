@@ -313,7 +313,7 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
 
 
 # Gen I for each r
-def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
+def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen, ParalCores=-1):
     #MultiSiteDict = MultiSiteDict.copy()
     Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     rSimDataPoint = Setting["MultiSite"]["rSimDataPoint"]
@@ -364,11 +364,12 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen):
     RSimList = RSimList + list(new_rlist)
     
     # Start the simulation for each r in RSimList
-    print("Start to simulate I in parallel. (This will need some time.)")
+    print("Start to simulate I in parallel with {} jobs.".format(ParalCores),
+          " (This will need some time.)")
     Counter_All = Counter(); Counter_All.Start()
     # To avoid original HisI been modified
     MultiSiteDict2 = deepcopy(MultiSiteDict)
-    RParel = Parallel(n_jobs = -1) \
+    RParel = Parallel(n_jobs = ParalCores) \
                         ( delayed(CalSimI)\
                           (r, MultiSiteDict2, Setting, Stat, Wth_gen) \
                           for r in RSimList \
@@ -457,8 +458,8 @@ def GenSimrV2UCurve(MultiSiteDict, Setting):
     IrCurvePar = MultiSiteDict["IrCurvePar"]
     DayInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
         
-    Simr = pd.DataFrame(); 
-    V2UCurve = pd.DataFrame();
+    Simr = pd.DataFrame()
+    V2UCurve = pd.DataFrame()
     for v in tqdm(Var,desc = "GenSimrV2UCurve"):
         simr = []; v2UCurve = []; count = 0
         for m in range(12):
@@ -490,7 +491,7 @@ def GenSimrV2UCurve(MultiSiteDict, Setting):
     MultiSiteDict["V2UCurve"] = V2UCurve
     return MultiSiteDict
 
-def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
+def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen, ParalCores=-1):
     """Simulate statistics for multi-cite weather generation.
 
     Args:
@@ -509,7 +510,8 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     Stns = Setting["StnID"] 
     try:
         shape = [Wth_obv[s][Var].shape for s in Stns]
-    except:
+    except Exception as e:
+        print(e)
         print("Make sure all stations in Wth_obv obtain variables that "
               +"you intend to generate.\n")
         input()
@@ -524,7 +526,8 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     # ["Weight"]
     try:
         MultiSiteDict = CalWeight(MultiSiteDict, Setting, Wth_obv)
-    except:
+    except Exception as e:
+        print(e)
         print("Error at Weight.")
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat
@@ -535,7 +538,8 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     try:
         MultiSiteDict = HisI(MultiSiteDict, Setting, Wth_obv,
                              ForGenWth = False)
-    except:
+    except Exception as e:
+        print(e)
         print("Error at HisI.")
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat
@@ -544,8 +548,10 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     # r and calculate monthly mean and average through years
     # ["SimIDict"], ["SimRlists"]
     try:
-        MultiSiteDict = CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen)
-    except:
+        MultiSiteDict = CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen,
+                                    ParalCores)
+    except Exception as e:
+        print(e)
         print("Error at SimIDict & SimRlists.")
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat
@@ -554,7 +560,8 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     # ["IrCurvePar"]
     try:
         MultiSiteDict = IrCurveFitting(MultiSiteDict, Setting)
-    except:
+    except Exception as e:
+        print(e)
         print("Error at IrCurvePar.")
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat
@@ -565,7 +572,8 @@ def MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen):
     # ["Simr"], ["V2UCurve"]
     try:
         MultiSiteDict = GenSimrV2UCurve(MultiSiteDict, Setting)     
-    except:
+    except Exception as e:
+        print(e)
         print("Error at Simr & V2UCurve.")
         Stat["MultiSiteDict"] = MultiSiteDict
         return Stat

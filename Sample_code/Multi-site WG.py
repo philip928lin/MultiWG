@@ -28,7 +28,8 @@ Wth_obv, Setting, Stat = MultiWG.ReadFiles(Wth_obv, Setting, Stat)
 # =============================================================================
 # Step3: Run Statistical Analysis
 # =============================================================================
-Stat = MultiWG.MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen)
+Stat = MultiWG.HisAnalysis(Wth_obv, Setting, Stat)
+Stat = MultiWG.MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen, ParalCores=-1)
 
 # =============================================================================
 # Step4: Generate RN Sets 

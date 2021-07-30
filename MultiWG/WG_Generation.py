@@ -243,10 +243,10 @@ def GenT(Wth_gen, Setting, Stat, Stn):
             return Y
 
         for item in TFourierCoef.keys():
+            FYFTF = Stat[Stn]["FourYearFourierTimeseriesFactor"]
             if LeapYear:
                 Data_nonleap = FourierFunc(TFourierCoef[item], False)
                 Data_leap = FourierFunc(TFourierCoef[item], True)
-                FYFTF = Stat[Stn]["FourYearFourierTimeseriesFactor"]
                 if Setting["ClimScenCsvFile"] is not None:
                     if "avg" in item:
                         Data_leap = Data_leap + FYFTF["Leap"]["T_avg_delta"]
