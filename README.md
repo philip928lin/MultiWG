@@ -3,6 +3,7 @@
 # MultiWG 
 A uni-site and multi-site stochastic weather generator.
 
+This is the first release of Multi-site stochastic Weather Generator (MultiWG). MultiWG provides an easy way for users to generate uni-site or multi-site weather in parallel. We also support some basic validation functions allowing users to validate WG simulated baseline results.
 Please check sample code at Sample_code and sample setting.json at Sample_WD.
 
 User guide is coming soon.
