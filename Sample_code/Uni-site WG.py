@@ -21,6 +21,11 @@ Setting["ClimScenCsvFile"] = {"466920":"466920_Scen.csv"}
 # {"466920":"466920_Scen.csv",
 #  "467080":"467080_Scen.csv",
 #  "467440":"467440_Scen.csv"} 
+# or (Baseline simulation)
+# Setting["ClimScenCsvFile"] = None
+
+# Daily precipitation, daily mean temperature, daily max temperature, and
+# daily min temperature.
 Setting["Var"] = ['PP01', 'TX01', 'TX02', 'TX04']
 
 # =============================================================================
@@ -48,6 +53,9 @@ Wth_gen, Stat = MultiWG.Generate(Wth_gen, Setting, Stat, ParalCores = 1)
 
 
 #%% Validation Test
+# Only validate the model with baseline simulation that 
+# Setting["ClimScenCsvFile"] = None
+
 ## Checking first and second moments among weather variables 
 CompareResult = MultiWG.MonthlyStatPlot(Wth_gen, Wth_obv, Setting)
 
