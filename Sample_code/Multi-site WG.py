@@ -34,6 +34,8 @@ Wth_obv, Setting, Stat = MultiWG.ReadFiles(Wth_obv, Setting, Stat)
 # =============================================================================
 # MultiWG.HisAnalysis has to be run first before running MultiWG.MultiHisAnalysis
 Stat = MultiWG.HisAnalysis(Wth_obv, Setting, Stat)  
+# This will take a bit of time depending on your computer. You can open Task 
+# Manager to moniter whether the process utilize parallel computation.
 Stat = MultiWG.MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen, ParalCores=-1)
 
 # =============================================================================
