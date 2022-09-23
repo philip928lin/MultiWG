@@ -7,6 +7,7 @@ Created on Tue Mar 12 19:16:30 2019
 from copy import deepcopy
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from time import gmtime, strftime
 from scipy.stats import expon, gamma, weibull_min, norm
 from joblib import Parallel, delayed    # For parallelization
@@ -242,12 +243,12 @@ def GenT(Wth_gen, Setting, Stat, Stn):
                     + C[7] * np.sin(3*x/T+C[3]) + C[8] * np.sin(4*x/T+C[4])
             return Y
 
-        for item in TFourierCoef.keys():
-            FYFTF = Stat[Stn]["FourYearFourierTimeseriesFactor"]
+        for item in TFourierCoef.keys():  
             if LeapYear:
                 Data_nonleap = FourierFunc(TFourierCoef[item], False)
                 Data_leap = FourierFunc(TFourierCoef[item], True)
                 if Setting["ClimScenCsvFile"] is not None:
+                    FYFTF = Stat[Stn]["FourYearFourierTimeseriesFactor"]
                     if "avg" in item:
                         Data_leap = Data_leap + FYFTF["Leap"]["T_avg_delta"]
                         Data_nonleap = Data_nonleap\
@@ -262,6 +263,7 @@ def GenT(Wth_gen, Setting, Stat, Stn):
             else:
                 Data_nonleap = FourierFunc(TFourierCoef[item], False)
                 if Setting["ClimScenCsvFile"] is not None:
+                    FYFTF = Stat[Stn]["FourYearFourierTimeseriesFactor"]
                     if "avg" in item:
                         Data_nonleap = Data_nonleap\
                                      + FYFTF["Nonleap"]["T_avg_delta"]
@@ -383,7 +385,7 @@ def DumpCheck(Wth_gen, Setting, Stat, s):
         Wth_gen[s][v] = Data
     return Wth_gen
 
-def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
+def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores=-1, verbose=10):
     """Start weather generation.
 
     Args:
@@ -405,11 +407,11 @@ def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
     GenYear = Setting["GenYear"]
     LeapYear = Setting["LeapYear"]     
     if LeapYear:
-        rng = list(pd.date_range( pd.datetime(2001,1,1),
-                                 pd.datetime(2004,12,31)))*int(GenYear/4)
+        rng = list(pd.date_range( datetime(2001,1,1),
+                                 datetime(2004,12,31)))*int(GenYear/4)
     else:
-        rng = list(pd.date_range( pd.datetime(2001,1,1),
-                                 pd.datetime(2001,12,31)))*int(GenYear)
+        rng = list(pd.date_range( datetime(2001,1,1),
+                                 datetime(2001,12,31)))*int(GenYear)
         
     def GenForAStn(Wth_gen, Setting, Stat, s):
         # Note that the RnNum has to be generated in advanced and stored
@@ -433,7 +435,7 @@ def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
         else:
             print("Start weather generation in parallel.")
                 
-    WthParel = Parallel(n_jobs = ParalCores) \
+    WthParel = Parallel(n_jobs=ParalCores, verbose=verbose) \
                         ( delayed(GenForAStn)\
                           (Wth_gen, Setting, Stat2, s) \
                           for s in Stns \
@@ -457,11 +459,11 @@ def Generate(Wth_gen, Setting, Stat, Export = True, ParalCores = -1):
     #     GenYear = Setting["GenYear"]
     #     LeapYear = Setting["LeapYear"]     
     #     if LeapYear:
-    #         rng = list(pd.date_range( pd.datetime(2001,1,1),
-    # pd.datetime(2004,12,31)))*int(GenYear/4)
+    #         rng = list(pd.date_range( datetime(2001,1,1),
+    # datetime(2004,12,31)))*int(GenYear/4)
     #     else:
-    #         rng = list(pd.date_range( pd.datetime(2001,1,1),
-    # pd.datetime(2001,12,31)))*int(GenYear)
+    #         rng = list(pd.date_range( datetime(2001,1,1),
+    # datetime(2001,12,31)))*int(GenYear)
     #     Wth_gen[s].index = pd.DatetimeIndex(rng)
         
         

@@ -273,7 +273,7 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
                 if type(Rn) is int: 
                     Rn = rn
                 else:
-                    Rn = np.concatenate((Rn,rn), axis = 1)
+                    Rn = np.concatenate((Rn,rn), axis=1)
         SpatialRnNum[v] = Rn
     MultiSiteDict["SpatialRnNum"] = SpatialRnNum
     
@@ -300,7 +300,7 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
     # Use single core here since we already distribute r into different 
     # cores/threads.
     Wth_gen, Stat = Generate(Wth_gen, Setting_Multi, Stat, Export = False,
-                             ParalCores = 1)
+                             ParalCores=1, verbose=1)
     SimI = HisI(MultiSiteDict, Setting, Wth_gen, ForGenWth = False)["HisI"]
 
     # Calculate monthly mean for establish I-r curve
@@ -313,7 +313,7 @@ def CalSimI(r, MultiSiteDict, Setting, Stat, Wth_gen):
 
 
 # Gen I for each r
-def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen, ParalCores=-1):
+def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen, ParalCores=-1, verbose=10):
     #MultiSiteDict = MultiSiteDict.copy()
     Var = Setting["Var"] + ["P_Occurrence"] # Add prep event variable
     rSimDataPoint = Setting["MultiSite"]["rSimDataPoint"]
@@ -369,7 +369,7 @@ def CalSimIDict(MultiSiteDict, Setting, Stat, Wth_gen, ParalCores=-1):
     Counter_All = Counter(); Counter_All.Start()
     # To avoid original HisI been modified
     MultiSiteDict2 = deepcopy(MultiSiteDict)
-    RParel = Parallel(n_jobs = ParalCores) \
+    RParel = Parallel(n_jobs=ParalCores, verbose=verbose) \
                         ( delayed(CalSimI)\
                           (r, MultiSiteDict2, Setting, Stat, Wth_gen) \
                           for r in RSimList \

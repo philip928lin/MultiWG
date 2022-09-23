@@ -14,11 +14,11 @@ Setting["StnID"] = ["466990", "467080", "467440"]
 Setting["WthObvCsvFile"] = {"466990":"466990.csv",
                             "467080":"467080.csv",
                             "467440":"467440.csv"} 
-Setting["ClimScenCsvFile"] = {"466990":"466990_Scen.csv",
-                              "467080":"467080_Scen.csv",
-                              "467440":"467440_Scen.csv"} 
+# Setting["ClimScenCsvFile"] = {"466990":"466990_Scen.csv",
+#                               "467080":"467080_Scen.csv",
+#                               "467440":"467440_Scen.csv"} 
 # or (Baseline simulation)
-# Setting["ClimScenCsvFile"] = None
+Setting["ClimScenCsvFile"] = None
 
 # Daily precipitation and daily mean temperature.
 Setting["Var"] = ['PP01', 'TX01'] 
@@ -32,7 +32,8 @@ Wth_obv, Setting, Stat = MultiWG.ReadFiles(Wth_obv, Setting, Stat)
 # =============================================================================
 # Step3: Run Statistical Analysis
 # =============================================================================
-Stat = MultiWG.HisAnalysis(Wth_obv, Setting, Stat)
+# MultiWG.HisAnalysis has to be run first before running MultiWG.MultiHisAnalysis
+Stat = MultiWG.HisAnalysis(Wth_obv, Setting, Stat)  
 Stat = MultiWG.MultiHisAnalysis(Stat, Setting, Wth_obv, Wth_gen, ParalCores=-1)
 
 # =============================================================================
