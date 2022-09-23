@@ -44,7 +44,7 @@ Stat = MultiWG.MultiGenRn(Setting, Stat)
 # =============================================================================
 # Step5: Generate Weather Data
 # =============================================================================
-Wth_gen, Stat = MultiWG.Generate(Wth_gen, Setting, Stat, ParalCores = -1)
+Wth_gen, Stat = MultiWG.Generate(Wth_gen, Setting, Stat, ParalCores=-1)
 
 
 #%% Validation Test
